@@ -1,25 +1,39 @@
 package com.misri.loginpage.db
 
+import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
 @Database(entities = [Employee::class], version = 1)
 abstract class EmployeeDatabase : RoomDatabase() {
-    abstract val contactNumber: String
+    abstract val employeeDao : EmployeeDao
+    companion object {
+        private const val Database_NAME = "employeedb.db"
 
+        /**
+         * As we need only one instance of db in our app will use to store
+         * This is to avoid memory leaks in android when there exist multiple instances of db
+         */
+        @Volatile
+        private var INSTANCE: EmployeeDatabase? = null
 
-    fun main(context:Context) {
-        val db = Room.databaseBuilder(
-            context.applicationContext,
-            AppDatabase::class.java, "database-name"
-        ).build()
-        val EmployeeDao = db.EmployeeDao()
-        val employee= arrayOf(Employee(1, "John", 25, 98), Employee(2, "Jane", 30,98))
-        EmployeeDao.insertAll(*employee)
-        val employeeList = EmployeeDao.getAll()
-        employeeList.forEach {
-            println("Employee: ${it.name}, contactNumber: ${it.contactNumber}")
+        fun getInstance(context: Context): EmployeeDatabase {
+
+            synchronized(this) {
+                var instance = INSTANCE
+
+                if (instance == null) {
+                    instance = Room.databaseBuilder(
+                        context.applicationContext,
+                        EmployeeDatabase::class.java,
+                        Database_NAME
+                    ).build()
+
+                    INSTANCE = instance
+                }
+                return instance
+            }
         }
     }
 }
